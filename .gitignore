@@ -1,0 +1,17 @@
+# build output
+build/
+build-*/
+cmake.log
+build-check.log
+compile_commands.json
+dist/
+.cache/
+
+# a local JUCE checkout is optional; CMake downloads the pinned release otherwise
+/JUCE/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp

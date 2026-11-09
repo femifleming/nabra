@@ -1,0 +1,23 @@
+#!/bin/sh
+# Make an installed copy of Nabra (e.g. from Homebrew) visible to DAWs and the desktop:
+# symlinks the VST3/LV2 plug-ins into ~/.vst3 and ~/.lv2 and adds a menu entry + icon under ~/.local/share.
+# Run with --remove to undo.
+set -eu
+SELF=$(readlink -f "$0")
+ROOT=$(cd "$(dirname "$SELF")/.." && pwd)
+DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+if [ "${1:-}" = "--remove" ]; then
+  rm -f "$HOME/.vst3/Nabra.vst3" "$HOME/.lv2/Nabra.lv2" "$DATA/applications/nabra.desktop" \
+        "$DATA/icons/hicolor/256x256/apps/nabra.png" "$DATA/icons/hicolor/512x512/apps/nabra.png"
+  echo "Nabra links removed."; exit 0
+fi
+mkdir -p "$HOME/.vst3" "$HOME/.lv2" "$DATA/applications"
+ln -sfn "$ROOT/lib/vst3/Nabra.vst3" "$HOME/.vst3/Nabra.vst3"
+ln -sfn "$ROOT/lib/lv2/Nabra.lv2" "$HOME/.lv2/Nabra.lv2"
+for s in 256 512; do
+  mkdir -p "$DATA/icons/hicolor/${s}x${s}/apps"
+  ln -sf "$ROOT/share/icons/hicolor/${s}x${s}/apps/nabra.png" "$DATA/icons/hicolor/${s}x${s}/apps/nabra.png"
+done
+sed "s|@NABRA_EXEC@|$ROOT/bin/Nabra|" "$ROOT/share/applications/nabra.desktop" > "$DATA/applications/nabra.desktop"
+command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DATA/applications" 2>/dev/null || true
+echo "Nabra linked: ~/.vst3/Nabra.vst3, ~/.lv2/Nabra.lv2 and an applications-menu entry."

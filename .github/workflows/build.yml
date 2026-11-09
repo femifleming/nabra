@@ -1,0 +1,164 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CMAKE_ARGS: -DCMAKE_BUILD_TYPE=Release -DNABRA_COPY_PLUGINS=OFF -DNABRA_BUILD_TESTS=ON
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macOS,   os: macos-14 }
+          - { name: Windows, os: windows-2022 }
+          - { name: Linux,   os: ubuntu-22.04 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="$(sed -n 's/^project(Nabra VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)-dev"; fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          echo "OUT=build/Nabra_artefacts/Release" >> "$GITHUB_ENV"
+
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libasound2-dev libjack-jackd2-dev libfreetype6-dev libfontconfig1-dev \
+            libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev \
+            libglu1-mesa-dev mesa-common-dev xvfb
+
+      - name: Cache JUCE download
+        uses: actions/cache@v4
+        with:
+          path: build/_deps/juce-src
+          key: juce-9.0.5-${{ runner.os }}
+
+      - name: Configure (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: |
+          [ "$RUNNER_OS" = macOS ] && brew list ninja >/dev/null 2>&1 || ( [ "$RUNNER_OS" = macOS ] && brew install ninja ) || true
+          cmake -B build -G Ninja $CMAKE_ARGS
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64 ${{ env.CMAKE_ARGS }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test (render every recipe offline)
+        shell: bash
+        run: |
+          mkdir -p test-out
+          T=build/NabraTest_artefacts/Release/NabraTest
+          [ -f "$T.exe" ] && T="$T.exe"
+          "$T" test-out
+
+      - name: Test (render the GUI to PNG)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          S=build/NabraSnapshot_artefacts/Release/NabraSnapshot
+          if [ "$RUNNER_OS" = Linux ]; then xvfb-run -a "$S" test-out; else "$S" test-out; fi
+
+      - name: Upload test renders
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-renders-${{ matrix.name }}
+          path: test-out
+
+      # ---------------- packaging ----------------
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist/stage
+          cp -R "$OUT/Standalone/Nabra.app" "$OUT/VST3/Nabra.vst3" "$OUT/AU/Nabra.component" dist/stage/
+          for b in dist/stage/*; do codesign --force --deep --sign - "$b"; done
+          lipo -info dist/stage/Nabra.app/Contents/MacOS/Nabra
+          cp README.md LICENSE dist/stage/
+          cp docs/HELP.md dist/stage/HELP.md
+          (cd dist/stage && ditto -c -k --keepParent --sequesterRsrc . ../tmp.zip)
+          (cd dist/stage && zip -qry "../Nabra-$VERSION-macOS.zip" .)
+          rm dist/tmp.zip
+          ls -la dist
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/stage | Out-Null
+          Copy-Item "$env:OUT/Standalone/Nabra.exe" dist/stage/
+          Copy-Item -Recurse "$env:OUT/VST3/Nabra.vst3" dist/stage/
+          Copy-Item README.md, LICENSE dist/stage/
+          Copy-Item docs/HELP.md dist/stage/
+          Compress-Archive -Path dist/stage/* -DestinationPath "dist/Nabra-$env:VERSION-Windows.zip"
+          $src = (Resolve-Path "$env:OUT").Path
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$env:VERSION" "/DSrcDir=$src" "/Odist" packaging/windows/nabra.iss
+          Get-ChildItem dist
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          P="dist/Nabra-$VERSION-Linux-x86_64"
+          mkdir -p "$P/bin" "$P/lib/vst3" "$P/lib/lv2" "$P/share/applications"
+          install -m 755 "$OUT/Standalone/Nabra" "$P/bin/Nabra"
+          install -m 755 packaging/linux/nabra-link-plugins "$P/bin/nabra-link-plugins"
+          cp -R "$OUT/VST3/Nabra.vst3" "$P/lib/vst3/"
+          cp -R "$OUT/LV2/Nabra.lv2" "$P/lib/lv2/"
+          cp packaging/linux/nabra.desktop "$P/share/applications/"
+          for s in 256 512; do
+            mkdir -p "$P/share/icons/hicolor/${s}x${s}/apps"
+            convert Resources/icon/nabra-icon.png -resize ${s}x${s} "$P/share/icons/hicolor/${s}x${s}/apps/nabra.png"
+          done
+          install -m 755 packaging/linux/install.sh "$P/install.sh"
+          cp README.md LICENSE docs/HELP.md "$P/"
+          tar -C dist -czf "$P.tar.gz" "$(basename "$P")"
+          # smoke test the installer and the app in a throwaway HOME
+          H=$(mktemp -d); HOME=$H "$P/install.sh"
+          test -x "$H/.local/bin/Nabra" && test -f "$H/.vst3/Nabra.vst3/Contents/x86_64-linux/Nabra.so" && test -f "$H/.local/share/applications/nabra.desktop"
+          (HOME=$H timeout 8 xvfb-run -a "$H/.local/bin/Nabra"; c=$?; echo "standalone exited with $c (124 = still running after 8s = good)"; [ $c -eq 124 ])
+          rm -rf "$P"
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nabra-${{ matrix.name }}
+          path: |
+            dist/*.zip
+            dist/*.exe
+            dist/*.tar.gz
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Nabra-*
+          merge-multiple: true
+          path: dist
+      - name: Checksums
+        run: cd dist && sha256sum * | tee SHA256SUMS.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "Nabra ${GITHUB_REF_NAME#v}" \
+            --notes "Downloads for macOS (universal), Windows (installer or zip) and Linux (x86_64). See the README for install instructions, including Homebrew." \
+          || gh release upload "$GITHUB_REF_NAME" dist/* --clobber --repo "$GITHUB_REPOSITORY"

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Nabra
+GenericName=Tapestry Synthesizer
+Comment=A knobless tapestry modular synthesizer, after Peter Blasser's Nabra
+Exec=@NABRA_EXEC@
+Icon=nabra
+Terminal=false
+Categories=AudioVideo;Audio;Music;Midi;
+Keywords=synth;synthesizer;modular;music;audio;midi;
+StartupWMClass=Nabra
