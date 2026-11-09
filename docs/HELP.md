@@ -3,6 +3,7 @@
 This is the full guide. The same text, with pictures, is inside the app: click **? HELP** in the top bar, or right-click any board.
 
 - [Start here](#start-here)
+- [Getting around (zoom & pan)](#getting-around-zoom--pan)
 - [Patching](#patching)
 - [Cords with parts in them](#cords-with-parts-in-them)
 - [MIDI to CV](#midi-to-cv)
@@ -35,6 +36,17 @@ On the far left, a strip of raw canvas has been sewn on. This is the **MIDI stri
 
 > Every audio module is **silent until something opens its env input**. If you hear nothing, an env is missing.
 > The little knob on each audio board sets its volume in the mix.
+
+## Getting around (zoom & pan)
+
+The window looks onto part of the tapestry, close enough to read on a laptop. This works the same way in the desktop app and in the plug-in.
+
+- **Pan:** two-finger swipe on the trackpad or scroll wheel (hold Shift to scroll sideways), press and drag on bare canvas, or use the arrow keys.
+- **Zoom:** pinch on the trackpad, hold **⌘** (macOS) or **Ctrl** (Windows/Linux) and scroll, use the **−** and **+** buttons, or press the − and = keys. Zoom goes from the whole tapestry up to 250%.
+- **Minimap:** the small picture in the top bar shows where you are (red box) and every cord. Click or drag on it to go anywhere.
+- **FIT** (or the **0** key) shows the whole tapestry at once.
+- **Long cords:** while dragging a cord, push the mouse to the edge of the window and the view scrolls with you.
+- The view, the zoom level and the window size are saved with your project or session.
 
 ## Patching
 
@@ -121,7 +133,7 @@ Each note-on pulse, sharpened by a capacitor cord, strikes a resonant Wave tuned
 
 - **COLOUR** switches the boards between the black-and-white photographs from the thesis (the default) and colour scans of the real circuit boards. Nabra remembers your choice with the project or session.
 - **LABELS** shows or hides the tape labels on every loop. Turn them off for the unlabelled, "intentionally unintelligible" original.
-- Resize the window from the bottom-right corner. Nabra re-renders sharply at any size.
+- Resize the window freely. Nabra re-renders sharply at any size and zoom.
 
 ## Using the desktop app
 

@@ -16,7 +16,7 @@ int main (int argc, char** argv)
     for (int i = 0; i < 120; ++i) { p.processBlock (buf, mb); mb.clear(); }
     std::unique_ptr<juce::AudioProcessorEditor> ed (p.createEditor());
     auto* e = dynamic_cast<NabraEditor*> (ed.get());
-    e->setSize ((int) nabra::layout::designW, (int) nabra::layout::designH);
+    e->setSize (1300, 860);
     auto save = [&] (const juce::String& name, float scale)
     {
         auto img = ed->createComponentSnapshot (ed->getLocalBounds(), true, scale);
@@ -33,9 +33,17 @@ int main (int argc, char** argv)
     }
     save ("main.png", 1.0f);
     save ("main2x.png", 2.0f);
+    e->zoomAbout (1.6f, { 650, 400 });
+    e->centreOn ({ 1450, 300 });
+    save ("zoomed.png", 2.0f);
+    e->fitAll();
+    save ("fit.png", 1.0f);
     e->toggleBoards();
-    save ("main_colour.png", 1.0f);
+    save ("fit_colour.png", 1.0f);
+    e->zoomAbout (1.6f, { 650, 400 });
+    save ("zoomed_colour.png", 1.0f);
     e->toggleBoards();
+    e->zoom = 1.0f; e->pan = { 0, 64 }; e->applyView();
     e->toggleHelp();
     save ("help_start.png", 1.0f);
     e->openHelpFor (nabra::MT::Slope);

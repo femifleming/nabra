@@ -208,6 +208,8 @@ void NabraProcessor::getStateInformation (juce::MemoryBlock& dest)
     root.setAttribute ("uiScale", uiScale);
     root.setAttribute ("labels", showLabels);
     root.setAttribute ("boards", colourBoards ? "colour" : "thesis");
+    root.setAttribute ("panX", panX); root.setAttribute ("panY", panY);
+    root.setAttribute ("uiW", uiW); root.setAttribute ("uiH", uiH);
     root.setAttribute ("program", currentProgram);
     if (auto x = apvts.copyState().createXml()) root.addChildElement (x.release());
     auto* p = root.createNewChildElement ("PATCH");
@@ -230,6 +232,8 @@ void NabraProcessor::setStateInformation (const void* data, int size)
     uiScale = (float) x->getDoubleAttribute ("uiScale", uiScale);
     showLabels = x->getBoolAttribute ("labels", true);
     colourBoards = x->getStringAttribute ("boards", "thesis") == "colour";
+    panX = (float) x->getDoubleAttribute ("panX", panX); panY = (float) x->getDoubleAttribute ("panY", panY);
+    uiW = x->getIntAttribute ("uiW", uiW); uiH = x->getIntAttribute ("uiH", uiH);
     currentProgram = x->getIntAttribute ("program", currentProgram);
     if (auto* ps = x->getChildByName (apvts.state.getType()))
         apvts.replaceState (juce::ValueTree::fromXml (*ps));

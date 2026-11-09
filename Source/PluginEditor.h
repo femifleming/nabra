@@ -21,7 +21,9 @@ public:
     void mouseUp (const juce::MouseEvent&) override;
     void mouseDoubleClick (const juce::MouseEvent&) override;
 
-    void invalidateCache() { cache = {}; repaint(); }
+    void invalidateCache() { cache = {}; thumb = {}; repaint(); }
+    juce::Image getThumb();          // small picture of the whole tapestry for the minimap
+    std::function<juce::Rectangle<float>()> getVisible;   // the part of the tapestry on screen (design coords)
     void flash (const juce::String& msg);
 
     nabra::Cord handCord = nabra::Cord::Wire;
@@ -54,7 +56,9 @@ private:
     NabraProcessor& proc;
     NabraEditor& editor;
 
-    juce::Image cache;
+    juce::Image cache, thumb;
+    bool panning = false, haveLastScreen = false;
+    juce::Point<float> lastScreen;
     float cacheScale = 0;
     bool cacheLabels = true;
     bool cacheBoards = false;
@@ -101,6 +105,13 @@ public:
 private:
     void timerCallback() override { repaint(); }
     int itemAt (juce::Point<float>) const;
+    juce::Rectangle<float> mini;
+    bool draggingMini = false;
+    void miniJump (juce::Point<float>);
+    float tbScale() const;
+public:
+    static constexpr float W = 1440.0f, H = 72.0f;
+private:
     NabraProcessor& proc;
     NabraEditor& editor;
     std::vector<juce::Rectangle<float>> cordRects;
@@ -118,8 +129,25 @@ public:
     explicit NabraEditor (NabraProcessor&);
     ~NabraEditor() override;
     void resized() override;
-    void paint (juce::Graphics&) override {}
+    void paint (juce::Graphics&) override;
     bool keyPressed (const juce::KeyPress&) override;
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+    void mouseMagnify (const juce::MouseEvent&, float scaleFactor) override;
+
+    // ---- the view onto the tapestry ----
+    float zoom = 1.0f;
+    juce::Point<float> pan;                    // design point at the stage's top-left
+    juce::Rectangle<float> visibleDesign() const;
+    void zoomAbout (float newZoom, juce::Point<float> stagePos);
+    void panBy (juce::Point<float> designDelta);
+    void centreOn (juce::Point<float> designPoint);
+    void fitAll();
+    float fitZoom() const;
+    void applyView();
+    void beginPan (juce::Point<float> screen) { panAnchor = screen; }
+    void dragPan (juce::Point<float> screen) { panBy ((panAnchor - screen) / zoom); panAnchor = screen; }
+    void autoScroll (juce::Point<float> screen);
+    juce::Component stage;
 
     void pushUndo();
     void undo();
@@ -137,7 +165,7 @@ public:
 private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override;
     NabraProcessor& proc;
-    juce::Component root;
+    juce::Point<float> panAnchor;
     HelpPanel help;
     std::vector<std::vector<nabra::Cable>> undoStack;
 };

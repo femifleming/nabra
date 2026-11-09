@@ -44,7 +44,9 @@ public:
     nabra::Engine& getEngine() { return engine; }
     juce::AudioProcessorValueTreeState apvts;
 
-    float uiScale = 0.7f;
+    float uiScale = 1.0f;          // zoom
+    float panX = 0.0f, panY = 64.0f;
+    int uiW = 1300, uiH = 860;
     bool showLabels = true;
     bool colourBoards = false;   // alternate theme: colour scans of the real circuit boards
 

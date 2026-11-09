@@ -99,7 +99,29 @@ RangedAudioParameter* Tapestry::knobParam (int cell) const
 void Tapestry::timerCallback()
 {
     if (rebuildCountdown > 0 && --rebuildCountdown == 0) cache = {};
+    if (drag.active && haveLastScreen)
+    {
+        editor.autoScroll (lastScreen);
+        drag.pos = getLocalPoint (nullptr, lastScreen);
+        auto j = jackAt (drag.pos);
+        if (j != hoverJack) { hoverJack = j; hoverJackTime = Time::getMillisecondCounter(); }
+    }
     repaint();
+}
+
+Image Tapestry::getThumb()
+{
+    if (! thumb.isValid() && cache.isValid())
+    {
+        const int tw = 320;
+        Rectangle<float> src (0, L::topH * cacheScale, L::designW * cacheScale, (L::designH - L::topH) * cacheScale);
+        int th = (int) std::round (tw * src.getHeight() / src.getWidth());
+        thumb = Image (Image::RGB, tw, th, true);
+        Graphics g (thumb);
+        g.setImageResamplingQuality (Graphics::mediumResamplingQuality);
+        g.drawImage (cache, 0, 0, tw, th, (int) src.getX(), (int) src.getY(), (int) src.getWidth(), (int) src.getHeight());
+    }
+    return thumb;
 }
 
 void Tapestry::flash (const String& m)
@@ -188,7 +210,7 @@ void Tapestry::paint (Graphics& g)
     const float scale = g.getInternalContext().getPhysicalPixelScaleFactor();
     if (! cache.isValid() || cacheLabels != proc.showLabels || cacheBoards != proc.colourBoards)
     {
-        const float s = juce::jlimit (0.3f, 3.0f, scale);
+        const float s = juce::jlimit (0.3f, 2.5f, scale);
         cache = Image (Image::RGB, (int) std::ceil (L::designW * s), (int) std::ceil (L::designH * s), false);
         Graphics cg (cache);
         cg.addTransform (AffineTransform::scale (s));
@@ -196,8 +218,9 @@ void Tapestry::paint (Graphics& g)
         cacheScale = s;
         cacheLabels = proc.showLabels;
         cacheBoards = proc.colourBoards;
+        thumb = {};
     }
-    else if (std::abs (scale - cacheScale) > 0.01f && rebuildCountdown == 0)
+    else if (std::abs (juce::jlimit (0.3f, 2.5f, scale) - cacheScale) > 0.01f && rebuildCountdown == 0)
         rebuildCountdown = 6;   // re-render crisp once resizing settles
 
     g.setOpacity (1.0f);
@@ -254,7 +277,8 @@ void Tapestry::paint (Graphics& g)
             auto f = art::serif (17, false, true);
             float w = GlyphArrangement::getStringWidth (f, flashMsg) + 40;
             Rectangle<float> r (w, 38);
-            r.setCentre (L::designW * 0.5f, L::designH - 40);
+            auto vis = getVisible ? getVisible() : Rectangle<float> (0, L::topH, L::designW, L::designH - L::topH);
+            r.setCentre (vis.getCentreX(), vis.getBottom() - 40);
             g.setColour (Colour (0x55000000).withMultipliedAlpha (a)); g.fillRect (r.translated (3, 4));
             g.setColour (Colour (0xfffbf7e8).withMultipliedAlpha (a)); g.fillRect (r);
             g.setColour (Colour (0xff8a2a1a).withMultipliedAlpha (a)); g.drawRect (r, 1.5f);
@@ -288,9 +312,11 @@ void Tapestry::paintCard (Graphics& g)
     auto tip = jackTip (hoverJack.cell, hoverJack.jack);
     Rectangle<float> r (W, H);
     r.setPosition (tip.x + 18, tip.y + 14);
-    if (r.getRight() > L::designW - 8) r.setX (tip.x - W - 18);
-    if (r.getBottom() > L::designH - 8) r.setY (tip.y - H - 14);
-    r.setY (juce::jmax (L::topH + 4, r.getY()));
+    auto vis = getVisible ? getVisible() : Rectangle<float> (0, L::topH, L::designW, L::designH - L::topH);
+    if (r.getRight() > vis.getRight() - 8) r.setX (tip.x - W - 18);
+    if (r.getBottom() > vis.getBottom() - 8) r.setY (tip.y - H - 14);
+    r.setX (juce::jlimit (vis.getX() + 4, juce::jmax (vis.getX() + 4, vis.getRight() - W - 4), r.getX()));
+    r.setY (juce::jlimit (vis.getY() + 4, juce::jmax (vis.getY() + 4, vis.getBottom() - H - 4), r.getY()));
 
     g.setColour (Colour (0x50000000)); g.fillRect (r.translated (3, 5));
     g.setColour (Colour (0xfff9f6ec)); g.fillRect (r);
@@ -349,8 +375,10 @@ void Tapestry::paintDiagramCard (Graphics& g, int cell)
     const float W = 300, H = sp.midi ? 150.0f : 330.0f;
     Rectangle<float> r (W, H);
     r.setPosition (b.getRight() + 24, b.getY() - 10);
-    if (r.getRight() > L::designW - 8) r.setX (b.getX() - W - 24);
-    r.setY (juce::jlimit (L::topH + 4, L::designH - H - 8, r.getY()));
+    auto vis = getVisible ? getVisible() : Rectangle<float> (0, L::topH, L::designW, L::designH - L::topH);
+    if (r.getRight() > vis.getRight() - 8) r.setX (b.getX() - W - 24);
+    r.setX (juce::jlimit (vis.getX() + 4, juce::jmax (vis.getX() + 4, vis.getRight() - W - 4), r.getX()));
+    r.setY (juce::jlimit (vis.getY() + 4, juce::jmax (vis.getY() + 4, vis.getBottom() - H - 4), r.getY()));
     g.setColour (Colour (0x50000000)); g.fillRect (r.translated (3, 5));
     g.setColour (Colours::white); g.fillRect (r);
     g.setColour (Colour (0xffc9c1ab)); g.drawRect (r, 1.0f);
@@ -529,13 +557,22 @@ void Tapestry::mouseDown (const MouseEvent& e)
             knobDrag = { k, prm->getValue(), p.y };
             prm->beginChangeGesture();
         }
+        return;
+    }
+    if (cableAt (p) < 0)
+    {
+        panning = true;
+        editor.beginPan (e.getScreenPosition().toFloat());
+        setMouseCursor (MouseCursor::DraggingHandCursor);
     }
 }
 
 void Tapestry::mouseDrag (const MouseEvent& e)
 {
+    if (panning) { editor.dragPan (e.getScreenPosition().toFloat()); return; }
     if (drag.active)
     {
+        lastScreen = e.getScreenPosition().toFloat(); haveLastScreen = true;
         drag.pos = e.position;
         auto j = jackAt (e.position);
         if (j != hoverJack) { hoverJack = j; hoverJackTime = Time::getMillisecondCounter(); }
@@ -548,6 +585,8 @@ void Tapestry::mouseDrag (const MouseEvent& e)
 
 void Tapestry::mouseUp (const MouseEvent& e)
 {
+    haveLastScreen = false;
+    if (panning) { panning = false; setMouseCursor (MouseCursor::NormalCursor); return; }
     if (knobDrag.cell >= 0)
     {
         if (auto* prm = knobParam (knobDrag.cell)) prm->endChangeGesture();
@@ -663,44 +702,55 @@ namespace { const char* cordLabels[] = { "wire", "resistor", "capacitor", "diode
 
 TopBar::TopBar (NabraProcessor& p, NabraEditor& e) : proc (p), editor (e)
 {
-    for (int i = 0; i < 4; ++i) cordRects.push_back ({ 452.0f + i * 104.0f, 8.0f, 96.0f, 50.0f });
-    float x = 900;
-    for (auto* n : { "RECIPES", "UNDO", "UNPATCH ALL", "LABELS", "COLOUR", "? HELP" })
+    for (int i = 0; i < 4; ++i) cordRects.push_back ({ 168.0f + i * 92.0f, 13.0f, 86.0f, 52.0f });
+    float x = 548;
+    for (auto* n : { "RECIPES", "UNDO", "UNPATCH ALL", "LABELS", "COLOUR", "? HELP", "-", "FIT", "+" })
     {
-        float w = art::dymoWidth (n) + 26;
-        buttons.push_back ({ n, { x, 19.0f, w, 26.0f } });
-        x += w + 14;
+        float w = juce::String (n).length() == 1 ? 26.0f : art::dymoWidth (n) + 18;
+        buttons.push_back ({ n, { x, 23.0f, w, 26.0f } });
+        x += w + (juce::String (n) == "? HELP" ? 18.0f : 8.0f);
     }
-    masterPos = { L::designW - 64.0f, 32.0f };
+    mini = { x + 6, 5.0f, 140.0f, 52.0f };
+    masterPos = { W - 34.0f, 30.0f };
     startTimerHz (15);
 }
 
 TopBar::~TopBar() = default;
 
-int TopBar::itemAt (Point<float> p) const
+float TopBar::tbScale() const { return juce::jlimit (0.55f, 1.25f, (float) getWidth() / W); }
+
+int TopBar::itemAt (Point<float> sp) const
 {
+    auto p = sp / tbScale();
     for (int i = 0; i < 4; ++i) if (cordRects[(size_t) i].contains (p)) return i;
     for (size_t i = 0; i < buttons.size(); ++i) if (buttons[i].second.contains (p)) return 10 + (int) i;
     if (p.getDistanceFrom (masterPos) < 16) return 100;
+    if (mini.contains (p)) return 200;
     return -1;
 }
 
 void TopBar::paint (Graphics& g)
 {
-    auto r = getLocalBounds().toFloat();
-    g.setGradientFill (ColourGradient (Colour (0xfff6f3ea), 0, 0, Colour (0xffe6e1d3), 0, r.getHeight(), false));
-    g.fillRect (r);
+    auto full = getLocalBounds().toFloat();
+    g.setGradientFill (ColourGradient (Colour (0xfff6f3ea), 0, 0, Colour (0xffe6e1d3), 0, full.getHeight(), false));
+    g.fillRect (full);
     g.setColour (Colour (0xffbfb7a2));
-    g.drawHorizontalLine ((int) r.getBottom() - 1, 0, r.getRight());
+    g.drawHorizontalLine ((int) full.getBottom() - 1, 0, full.getRight());
 
-    g.setColour (Colour (0xff1b1a18)); g.setFont (art::serif (36, true));
-    g.drawText ("Nabra", Rectangle<float> (24, 4, 130, 40), Justification::centredLeft);
-    g.setColour (Colour (0xff6d6a62)); g.setFont (art::serif (13, false, true));
-    g.drawText ("an analog brain - the knobless tapestry", Rectangle<float> (26, 40, 300, 16), Justification::centredLeft);
-    g.drawText ("after Peter Blasser, 2000 / \"Stores at the Mall\", 2015", Rectangle<float> (160, 14, 280, 16), Justification::centredLeft);
+    g.addTransform (AffineTransform::scale (tbScale()));
+
+    g.setColour (Colour (0xff1b1a18)); g.setFont (art::serif (32, true));
+    g.drawText ("Nabra", Rectangle<float> (16, 6, 150, 38), Justification::centredLeft);
+    {   // the logo: Blasser's Sine diagram from the thesis
+        auto mk = art::diagram ("mark");
+        if (mk.isValid()) { g.setOpacity (0.9f); g.drawImage (mk, Rectangle<float> (106, 7, 52, 58), RectanglePlacement::centred); g.setOpacity (1.0f); }
+    }
+    g.setColour (Colour (0xff6d6a62)); g.setFont (art::serif (12, false, true));
+    g.drawText ("an analog brain", Rectangle<float> (18, 42, 150, 14), Justification::centredLeft);
+    g.drawText ("after P. Blasser, 2000", Rectangle<float> (18, 55, 150, 14), Justification::centredLeft);
 
     g.setColour (Colour (0xff6d6a62)); g.setFont (art::font (9, true));
-    g.drawText ("CORD IN HAND", Rectangle<float> (452, 0, 200, 10), Justification::centredLeft);
+    g.drawText ("CORD IN HAND", Rectangle<float> (168, 1, 200, 11), Justification::centredLeft);
     for (int i = 0; i < 4; ++i)
     {
         auto cr = cordRects[(size_t) i];
@@ -711,36 +761,68 @@ void TopBar::paint (Graphics& g)
             g.setColour (Colour (0xfff6f3ea)); g.fillRoundedRectangle (cr.reduced (2), 3);
         }
         else if (hover == i) { g.setColour (Colour (0x14000000)); g.fillRoundedRectangle (cr, 4); }
-        art::drawCordIcon (g, cr.withTrimmedBottom (14).reduced (4, 2), (Cord) i, editor.tapestry.handRes);
+        art::drawCordIcon (g, cr.withTrimmedBottom (15).reduced (4, 2), (Cord) i, editor.tapestry.handRes);
         g.setColour (Colour (0xff1b1a18)); g.setFont (art::serif (12.5f, sel));
         String t = cordLabels[i];
         if (i == 1) t << " " << resistorName (editor.tapestry.handRes);
-        g.drawText (t, cr.removeFromBottom (15), Justification::centred);
+        g.drawText (t, cr.removeFromBottom (16), Justification::centred);
     }
 
     for (size_t i = 0; i < buttons.size(); ++i)
     {
         auto& [n, br] = buttons[i];
+        const bool toggle = n == String ("LABELS") || n == String ("COLOUR");
         bool on = (n == String ("LABELS") && proc.showLabels) || (n == String ("COLOUR") && proc.colourBoards);
         g.setColour (Colour (0x44000000)); g.fillRoundedRectangle (br.translated (1, 2), 3);
         g.setColour (hover == 10 + (int) i ? Colour (0xff38383b) : Colour (0xff18181a));
         g.fillRoundedRectangle (br, 3);
         g.setColour (Colour (0xffeeeeea));
-        g.setFont (Font (FontOptions ("Arial", 10.5f, Font::bold).withKerningFactor (0.14f)));
-        g.drawText (n, br, Justification::centred);
-        if (n == String ("LABELS") || n == String ("COLOUR"))
+        g.setFont (Font (FontOptions ("Arial", n.length() == 1 ? 15.0f : 10.5f, Font::bold).withKerningFactor (0.12f)));
+        g.drawText (n, toggle ? br.withTrimmedRight (8) : br, Justification::centred);
+        if (toggle)
         {
             g.setColour (on ? Colour (0xff6cff3a) : Colour (0xff2c4a22));
-            g.fillEllipse (br.getRight() - 12, br.getCentreY() - 2.5f, 5, 5);
+            g.fillEllipse (br.getRight() - 11, br.getCentreY() - 2.5f, 5, 5);
         }
     }
+    g.setColour (Colour (0xff6d6a62)); g.setFont (art::font (9, true));
+    auto zb = buttons[6].second.getUnion (buttons[8].second);
+    g.drawText ("ZOOM " + String (juce::roundToInt (editor.zoom * 100)) + "%", zb.withY (2).withHeight (12), Justification::centred);
+
+    // minimap: the whole tapestry, with the window you're looking through
+    g.setColour (Colour (0xff3a3936)); g.fillRect (mini.expanded (1.5f));
+    auto th = editor.tapestry.getThumb();
+    if (th.isValid()) { g.setOpacity (1.0f); g.drawImage (th, mini, RectanglePlacement::stretchToFit); }
+    auto toMini = [this] (Point<float> d) {
+        return Point<float> (mini.getX() + d.x / L::designW * mini.getWidth(),
+                             mini.getY() + (d.y - L::topH) / (L::designH - L::topH) * mini.getHeight()); };
+    for (auto& c : proc.getCables())
+    {
+        g.setColour (art::cordColour (c.colour).withAlpha (0.9f));
+        g.drawLine (Line<float> (toMini (Tapestry::jackTip (c.src.cell, c.src.jack)), toMini (Tapestry::jackTip (c.dst.cell, c.dst.jack))), 1.2f);
+    }
+    auto v = editor.visibleDesign();
+    Rectangle<float> vr (toMini (v.getTopLeft()), toMini (v.getBottomRight()));
+    vr = vr.getIntersection (mini);
+    g.setColour (Colour (0x30ffd27a)); g.fillRect (vr);
+    g.setColour (Colour (0xffd8402a)); g.drawRect (vr, 1.6f);
+    g.setColour (Colour (0xff6d6a62)); g.setFont (art::font (8.5f, true));
+    g.drawText ("CLICK TO GO THERE", mini.withY (mini.getBottom() + 1).withHeight (10), Justification::centred);
 
     // master volume + the out LED
-    float v = proc.apvts.getParameter ("master")->getValue();
-    art::drawKnob (g, masterPos, 12, v, hover == 100);
-    g.setColour (Colour (0xff6d6a62)); g.setFont (art::font (9, true));
-    g.drawText ("VOLUME", Rectangle<float> (masterPos.x - 80, masterPos.y - 6, 56, 12), Justification::centredRight);
-    art::drawLed (g, { masterPos.x + 34, masterPos.y }, 0, juce::jlimit (0.0f, 1.0f, proc.getEngine().outLevel.load() * 1.6f));
+    float val = proc.apvts.getParameter ("master")->getValue();
+    art::drawKnob (g, masterPos, 12, val, hover == 100);
+    g.setColour (Colour (0xff6d6a62)); g.setFont (art::font (8.5f, true));
+    g.drawText ("VOLUME", Rectangle<float> (masterPos.x - 30, masterPos.y + 17, 60, 11), Justification::centred);
+    art::drawLed (g, { masterPos.x - 26, masterPos.y - 14 }, 0, juce::jlimit (0.0f, 1.0f, proc.getEngine().outLevel.load() * 1.6f));
+}
+
+void TopBar::miniJump (Point<float> sp)
+{
+    auto p = sp / tbScale();
+    Point<float> d ((p.x - mini.getX()) / mini.getWidth() * L::designW,
+                    L::topH + (p.y - mini.getY()) / mini.getHeight() * (L::designH - L::topH));
+    editor.centreOn (d);
 }
 
 void TopBar::mouseMove (const MouseEvent& e)
@@ -763,12 +845,16 @@ void TopBar::mouseDown (const MouseEvent& e)
     else if (it >= 10 && it < 100)
     {
         String n = buttons[(size_t) it - 10].first;
+        auto mid = editor.stage.getLocalBounds().toFloat().getCentre();
         if (n == "RECIPES") editor.showRecipeMenu (buttons[(size_t) it - 10].second);
         else if (n == "UNDO") editor.undo();
         else if (n == "UNPATCH ALL") editor.unpatchAll();
         else if (n == "LABELS") editor.toggleLabels();
         else if (n == "COLOUR") editor.toggleBoards();
         else if (n == "? HELP") editor.toggleHelp();
+        else if (n == "-") editor.zoomAbout (editor.zoom / 1.25f, mid);
+        else if (n == "+") editor.zoomAbout (editor.zoom * 1.25f, mid);
+        else if (n == "FIT") editor.fitAll();
     }
     else if (it == 100)
     {
@@ -778,6 +864,7 @@ void TopBar::mouseDown (const MouseEvent& e)
         dragVal = p->getValue();
         p->beginChangeGesture();
     }
+    else if (it == 200) { draggingMini = true; miniJump (e.position); }
     repaint();
 }
 
@@ -785,11 +872,13 @@ void TopBar::mouseDrag (const MouseEvent& e)
 {
     if (draggingMaster)
         proc.apvts.getParameter ("master")->setValueNotifyingHost (juce::jlimit (0.0f, 1.0f, dragVal + (dragStart - e.position.y) / 120.0f));
+    if (draggingMini) miniJump (e.position);
 }
 
 void TopBar::mouseUp (const MouseEvent&)
 {
     if (draggingMaster) { proc.apvts.getParameter ("master")->endChangeGesture(); draggingMaster = false; }
+    draggingMini = false;
 }
 
 void TopBar::mouseDoubleClick (const MouseEvent& e)
@@ -805,10 +894,13 @@ void TopBar::mouseDoubleClick (const MouseEvent& e)
 NabraEditor::NabraEditor (NabraProcessor& p)
     : AudioProcessorEditor (p), tapestry (p, *this), topBar (p, *this), proc (p)
 {
-    root.setBounds (0, 0, (int) L::designW, (int) L::designH);
-    tapestry.setBounds (root.getLocalBounds());
-    topBar.setBounds (0, 0, (int) L::designW, (int) L::topH);
-    help.setBounds (root.getLocalBounds());
+    tapestry.setBounds (0, 0, (int) L::designW, (int) L::designH);
+    tapestry.getVisible = [this] { return visibleDesign(); };
+    stage.addAndMakeVisible (tapestry);
+    stage.setInterceptsMouseClicks (false, true);
+    addAndMakeVisible (stage);
+    addAndMakeVisible (topBar);
+
     help.setVisible (false);
     help.onClose = [this] { toggleHelp(); };
     help.onLoadRecipe = [this] (int i)
@@ -818,28 +910,101 @@ NabraEditor::NabraEditor (NabraProcessor& p)
         toggleHelp();
         tapestry.flash (String ("loaded: ") + recipes()[(size_t) i].name);
     };
-    root.addAndMakeVisible (tapestry);
-    root.addAndMakeVisible (topBar);
-    root.addChildComponent (help);
-    addAndMakeVisible (root);
+    addChildComponent (help);
     proc.addChangeListener (this);
 
+    zoom = proc.uiScale > 0.2f ? proc.uiScale : 1.0f;
+    pan = { proc.panX, proc.panY };
     setResizable (true, true);
-    const double ratio = L::designW / L::designH;
-    getConstrainer()->setFixedAspectRatio (ratio);
-    setResizeLimits ((int) (L::designW * 0.42f), (int) (L::designH * 0.42f), (int) (L::designW * 1.4f), (int) (L::designH * 1.4f));
-    float s = juce::jlimit (0.42f, 1.4f, proc.uiScale);
-    setSize ((int) std::round (L::designW * s), (int) std::round (L::designH * s));
+    setResizeLimits (760, 480, 3800, 2400);
+    setSize (juce::jlimit (760, 3800, proc.uiW), juce::jlimit (480, 2400, proc.uiH));
     setWantsKeyboardFocus (true);
 }
 
 NabraEditor::~NabraEditor() { proc.removeChangeListener (this); }
 
+void NabraEditor::paint (Graphics& g) { g.fillAll (Colour (0xff2b2a27)); }   // the wall behind the tapestry
+
 void NabraEditor::resized()
 {
-    float s = (float) getWidth() / L::designW;
-    root.setTransform (AffineTransform::scale (s));
-    proc.uiScale = s;
+    float tbH = TopBar::H * juce::jlimit (0.55f, 1.25f, (float) getWidth() / TopBar::W);
+    topBar.setBounds (0, 0, getWidth(), (int) std::round (tbH));
+    stage.setBounds (0, topBar.getBottom(), getWidth(), getHeight() - topBar.getBottom());
+    help.setBounds (getLocalBounds());
+    proc.uiW = getWidth(); proc.uiH = getHeight();
+    applyView();
+}
+
+float NabraEditor::fitZoom() const
+{
+    return juce::jmin ((float) stage.getWidth() / L::designW, (float) stage.getHeight() / (L::designH - L::topH));
+}
+
+Rectangle<float> NabraEditor::visibleDesign() const
+{
+    return { pan.x, pan.y, (float) stage.getWidth() / zoom, (float) stage.getHeight() / zoom };
+}
+
+void NabraEditor::applyView()
+{
+    if (stage.getWidth() <= 0) return;
+    zoom = juce::jlimit (juce::jmin (1.0f, fitZoom()), 2.5f, zoom);
+    const float vw = (float) stage.getWidth() / zoom, vh = (float) stage.getHeight() / zoom;
+    const float spanH = L::designH - L::topH;
+    pan.x = vw >= L::designW ? (L::designW - vw) * 0.5f : juce::jlimit (0.0f, L::designW - vw, pan.x);
+    pan.y = vh >= spanH ? L::topH + (spanH - vh) * 0.5f : juce::jlimit (L::topH, L::designH - vh, pan.y);
+    tapestry.setTransform (AffineTransform::translation (-pan.x, -pan.y).scaled (zoom));
+    proc.uiScale = zoom; proc.panX = pan.x; proc.panY = pan.y;
+    topBar.repaint();
+}
+
+void NabraEditor::zoomAbout (float z, Point<float> sp)
+{
+    auto d = pan + sp / zoom;
+    zoom = juce::jlimit (juce::jmin (1.0f, fitZoom()), 2.5f, z);
+    pan = d - sp / zoom;
+    applyView();
+}
+
+void NabraEditor::panBy (Point<float> d) { pan += d; applyView(); }
+
+void NabraEditor::centreOn (Point<float> d)
+{
+    pan = d - Point<float> ((float) stage.getWidth(), (float) stage.getHeight()) * (0.5f / zoom);
+    applyView();
+}
+
+void NabraEditor::fitAll() { zoom = fitZoom(); applyView(); }
+
+void NabraEditor::autoScroll (Point<float> screen)
+{
+    auto p = stage.getLocalPoint (nullptr, screen);
+    const float edge = 40.0f, speed = 14.0f / zoom;
+    Point<float> d;
+    if (p.x < edge) d.x = -speed * (1.0f + (edge - p.x) / edge);
+    if (p.x > (float) stage.getWidth() - edge) d.x = speed * (1.0f + (p.x - (float) stage.getWidth() + edge) / edge);
+    if (p.y < edge) d.y = -speed * (1.0f + (edge - p.y) / edge);
+    if (p.y > (float) stage.getHeight() - edge) d.y = speed * (1.0f + (p.y - (float) stage.getHeight() + edge) / edge);
+    if (d != Point<float>()) panBy (d);
+}
+
+void NabraEditor::mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& w)
+{
+    auto sp = e.getEventRelativeTo (&stage).position;
+    if (e.mods.isCommandDown() || e.mods.isCtrlDown())
+        zoomAbout (zoom * std::pow (1.0025f, (w.deltaY) * 220.0f), sp);
+    else
+    {
+        float k = w.isSmooth ? 260.0f : 420.0f;
+        float dx = -w.deltaX * k, dy = -w.deltaY * k;
+        if (e.mods.isShiftDown() && dx == 0.0f) std::swap (dx, dy);
+        panBy (Point<float> (dx, dy) / zoom);
+    }
+}
+
+void NabraEditor::mouseMagnify (const MouseEvent& e, float f)
+{
+    zoomAbout (zoom * f, e.getEventRelativeTo (&stage).position);
 }
 
 void NabraEditor::changeListenerCallback (ChangeBroadcaster*) { tapestry.repaint(); }
@@ -849,6 +1014,16 @@ bool NabraEditor::keyPressed (const KeyPress& k)
     if (k == KeyPress ('z', ModifierKeys::commandModifier, 0)) { undo(); return true; }
     if (k.getTextCharacter() == '?') { toggleHelp(); return true; }
     if (k == KeyPress::escapeKey && help.isVisible()) { toggleHelp(); return true; }
+    if (help.isVisible()) return false;
+    const float step = 140.0f / zoom;
+    if (k == KeyPress::leftKey)  { panBy ({ -step, 0 }); return true; }
+    if (k == KeyPress::rightKey) { panBy ({ step, 0 }); return true; }
+    if (k == KeyPress::upKey)    { panBy ({ 0, -step }); return true; }
+    if (k == KeyPress::downKey)  { panBy ({ 0, step }); return true; }
+    auto mid = stage.getLocalBounds().toFloat().getCentre();
+    if (k.getTextCharacter() == '=' || k.getTextCharacter() == '+') { zoomAbout (zoom * 1.25f, mid); return true; }
+    if (k.getTextCharacter() == '-') { zoomAbout (zoom / 1.25f, mid); return true; }
+    if (k.getTextCharacter() == '0') { fitAll(); return true; }
     return false;
 }
 
@@ -894,7 +1069,7 @@ void NabraEditor::showRecipeMenu (Rectangle<float>)
     m.showMenuAsync (PopupMenu::Options(), [this] (int r)
     {
         if (r <= 0) return;
-        if (r == 101) { toggleHelp(); help.showPage (4); return; }
+        if (r == 101) { toggleHelp(); help.showPage (5); return; }
         pushUndo();
         if (r == 100) { proc.loadRecipe (-1); return; }
         proc.loadRecipe (r - 1);

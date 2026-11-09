@@ -2,10 +2,11 @@
   <img src="docs/images/hard-and-soft.jpg" alt="The Hard... and The Soft: a modular synthesizer wall beside the Nabra, the soft hanging tapestry synthesizer, being patched by hand" width="820">
 </p>
 
-<h1 align="center">
-  <img src="docs/images/icon-256.png" width="72" alt=""><br>
-  Nabra
-</h1>
+<p align="center">
+  <img src="docs/images/logo.png" width="180" alt="Nabra logo: Peter Blasser's hand-drawn Sine module diagram from the thesis, above a black Dymo-tape label reading NABRA">
+</p>
+
+<h1 align="center">Nabra</h1>
 
 <p align="center">
   <b>An analog brain: the knobless tapestry synthesizer, as a VST3 / AU / LV2 instrument and a desktop app.</b><br>
@@ -29,7 +30,13 @@ has a fixed tuning, and you change it only by patching something into it.
 This version adds a sewn-on **MIDI-to-CV strip** so you can play it from a keyboard or a DAW. It also adds **cords with parts
 in them** (wire, resistor, capacitor, diode), as the thesis intended.
 
-![Nabra, thesis theme](docs/images/screenshot-thesis.jpg)
+![Nabra, the whole tapestry (FIT view), thesis theme](docs/images/screenshot-thesis.jpg)
+
+**Zoom in and patch.** The desktop app and the plug-in share the same view. Pinch or ⌘/Ctrl-scroll to zoom up to 250%.
+Swipe, scroll or drag the bare canvas to pan. Use the minimap in the top bar to jump anywhere. When a cord reaches the
+edge of the window, the view scrolls along with it.
+
+![Nabra zoomed in](docs/images/screenshot-zoom.jpg)
 
 **Two looks.** The default theme uses the black-and-white board photographs from the thesis. Press **COLOUR** in the
 top bar to switch to colour scans of the real circuit boards:
@@ -136,6 +143,8 @@ It needs ALSA, FreeType, fontconfig and X11, which nearly every desktop distro a
 | Change a cord's part | pick wire / resistor / capacitor / diode in the top bar, or right-click a cord |
 | Undo | **⌘Z** (macOS) or **Ctrl+Z** (Windows/Linux), or **UNDO** |
 | Recipes | **RECIPES**: 3 from the thesis, 4 using the MIDI strip |
+| Zoom | pinch, ⌘/Ctrl + scroll, **−** / **+** buttons or keys; **FIT** (or **0**) shows everything |
+| Pan | two-finger swipe / scroll wheel (Shift = sideways), drag bare canvas, arrow keys, or click the minimap |
 | Labels on/off | **LABELS** hides the tape labels, like the unlabelled original |
 | Theme | **COLOUR** switches between thesis photos and colour board scans |
 | Help | **? HELP**, or right-click a board |
@@ -180,5 +189,6 @@ packaging/           Linux desktop entry + installer, Windows Inno Setup script
 
 - The Nabra instrument, its design, the photographs, the diagrams and the quoted text are by **Peter Blasser**, from
   *Stores at the Mall* (Wesleyan University, 2015), and are used with credit for non-commercial purposes.
+- The logo is Blasser's hand-drawn **Sine** module diagram from the thesis. The app icon is a photograph of the Nabra rolled up.
 - Built with [JUCE](https://juce.com). The code in this repository is licensed under the **GNU AGPL v3** ([LICENSE](LICENSE)),
   matching JUCE's open-source license.

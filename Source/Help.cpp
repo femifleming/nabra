@@ -287,13 +287,25 @@ void HelpPanel::build()
            "Swoop, Pulse) drive the sound makers (Trang, Noise, Sine), which can go on through the filters (Wave) into the mix (Out, bottom right). "
            "On the far left, a strip of raw canvas has been sewn on: the **MIDI strip**, which turns your DAW's notes into voltages."),
         H ("Your first patch, in 30 seconds"),
-        S ("Click **unpatch all** in the top bar, so the tapestry is empty and silent."),
+        S ("Click **unpatch all** in the top bar, so the tapestry is empty and silent. (See **Getting around** for panning and zooming the view.)"),
         S ("Find **Slope 3** (second column from the left of the painted canvas, top). Press on the copper loop labelled **ANGLE** on its top edge and drag. A cord follows your mouse."),
         S ("Let go on the loop labelled **env** at the top of **Sine 5** (top of the right-hand column of Sines). The Sine now breathes in and out with the slow triangle."),
         S ("Now drag from Slope 3's **CREST** (right edge, top) to **trig** on **Swoop 2**, and from Swoop 2's **SWOOP** to **env** on **Noise 3**. You have just built the first recipe in the thesis."),
         S ("Hover over any loop to see what it does and a live trace of its voltage. Hover over a module's black name tape to see its diagram from the thesis."),
         N ("Every audio module is **silent until something opens its env input**. If you hear nothing, an env is missing. "
            "The little knob on each audio board is its volume into the mix."),
+    } });
+
+    pages.push_back ({ "Getting around", "GUIDE", {
+        H ("Getting around the tapestry"),
+        P ("The window looks onto part of the tapestry, close enough to read on a laptop; move the view around it, or press **FIT** to see the whole thing at once."),
+        S ("**Pan:** two-finger swipe on the trackpad or scroll wheel (shift-scroll goes sideways), or press and drag on any bare canvas or board. Arrow keys work too."),
+        S ("**Zoom:** pinch on the trackpad, or hold **cmd** and scroll; the **-** and **+** buttons; or the - and = keys. Zoom goes from 'whole tapestry' up to 250%."),
+        S ("**Minimap:** the little picture of the tapestry in the top bar shows where you are (red box) and every cord. Click or drag on it to go anywhere."),
+        S ("**FIT** (or the 0 key) shows the whole tapestry at once, like the original Nabra window."),
+        S ("**Long cords:** while dragging a cord, push the mouse to the edge of the window and the view scrolls along with you, so you can reach a board that's off screen."),
+        S ("Resize the window freely - the view, zoom and window size are saved with your project."),
+        N ("Order of the columns, left to right: **MIDI strip** | Slope Slope | Shot | Dust/Stair | Rand/Trand | Swoop | Pulse | Trang | Noise | Sine Sine | Wave | Pow/Out."),
     } });
 
     pages.push_back ({ "Patching", "GUIDE", {
