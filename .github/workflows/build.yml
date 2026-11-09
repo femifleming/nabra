@@ -125,7 +125,8 @@ jobs:
           # smoke test the installer and the app in a throwaway HOME
           H=$(mktemp -d); HOME=$H "$P/install.sh"
           test -x "$H/.local/bin/Nabra" && test -f "$H/.vst3/Nabra.vst3/Contents/x86_64-linux/Nabra.so" && test -f "$H/.local/share/applications/nabra.desktop"
-          (HOME=$H timeout 8 xvfb-run -a "$H/.local/bin/Nabra"; c=$?; echo "standalone exited with $c (124 = still running after 8s = good)"; [ $c -eq 124 ])
+          c=0; HOME=$H timeout 8 xvfb-run -a "$H/.local/bin/Nabra" || c=$?
+          echo "standalone exited with $c (124 = still running after 8s = good)"; [ $c -eq 124 ]
           rm -rf "$P"
           ls -la dist
 
