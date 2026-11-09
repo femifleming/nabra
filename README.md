@@ -157,7 +157,7 @@ cmake --build build
 - **Windows:** use `cmake -B build -G "Visual Studio 17 2022" -A x64 -DNABRA_COPY_PLUGINS=OFF`, then
   `cmake --build build --config Release`.
 - **Linux:** first install the dependencies:
-  `sudo apt install libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libglu1-mesa-dev`.
+  `sudo apt install libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libxi-dev libglu1-mesa-dev`.
 
 The build output goes to `build/Nabra_artefacts/Release/{Standalone,VST3,AU,LV2}`. Add `-DNABRA_COPY_PLUGINS=OFF` to skip
 copying into the system plug-in folders.
