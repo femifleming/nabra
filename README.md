@@ -185,6 +185,20 @@ Resources/diagrams   module diagrams from the thesis   Resources/icon     app ic
 packaging/           Linux desktop entry + installer, Windows Inno Setup script
 ```
 
+## Human contributions
+
+Nabra's code was written with Claude Code (Anthropic), working under the direction of its author, [femifleming](https://github.com/femifleming). This is what the author brought to it:
+
+- **The concept and source material.** The author chose Peter Blasser's Wesleyan thesis *Stores at the Mall* and asked for its Nabra chapter to be made into a playable modular instrument.
+- **The visual direction.** The instrument should look like the thesis, using the paper's images as its aesthetic.
+- **The MIDI-to-CV module.** A module that turns the plug-in's incoming MIDI into patchable control voltage.
+- **The built-in help.** In-app help that explains how to patch it, plus instructions and this README.
+- **Scope.** Nabra is its own instrument, separate from the author's other plug-ins.
+- **Testing and sign-off.** The author tried the build, approved it as final, and asked for the sister version Nabruh, the same instrument with a bigger interface for laptop screens.
+- **The release.** A public GitHub release that installs through Homebrew and runs on macOS, Windows and Linux, as a plug-in and as a desktop app.
+- **Credit to Blasser.** A link to Blasser's dissertation chapter on this page, and the decision to publish with the thesis images.
+- **The logo and zoom.** A logo taken from the dissertation, and a desktop app you can zoom and pan around like the plug-in.
+
 ## Credits & license
 
 - The Nabra instrument, its design, the photographs, the diagrams and the quoted text are by **Peter Blasser**, from
