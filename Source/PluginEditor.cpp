@@ -741,10 +741,6 @@ void TopBar::paint (Graphics& g)
 
     g.setColour (Colour (0xff1b1a18)); g.setFont (art::serif (32, true));
     g.drawText ("Nabra", Rectangle<float> (16, 6, 150, 38), Justification::centredLeft);
-    {   // the logo: Blasser's Sine diagram from the thesis
-        auto mk = art::diagram ("mark");
-        if (mk.isValid()) { g.setOpacity (0.9f); g.drawImage (mk, Rectangle<float> (106, 7, 52, 58), RectanglePlacement::centred); g.setOpacity (1.0f); }
-    }
     g.setColour (Colour (0xff6d6a62)); g.setFont (art::serif (12, false, true));
     g.drawText ("an analog brain", Rectangle<float> (18, 42, 150, 14), Justification::centredLeft);
     g.drawText ("after P. Blasser, 2000", Rectangle<float> (18, 55, 150, 14), Justification::centredLeft);

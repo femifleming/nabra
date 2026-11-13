@@ -2,10 +2,6 @@
   <img src="docs/images/hard-and-soft.jpg" alt="The Hard... and The Soft: a modular synthesizer wall beside the Nabra, the soft hanging tapestry synthesizer, being patched by hand" width="820">
 </p>
 
-<p align="center">
-  <img src="docs/images/logo.png" width="180" alt="Nabra logo: Peter Blasser's hand-drawn Sine module diagram from the thesis, above a black Dymo-tape label reading NABRA">
-</p>
-
 <p align="center"><img src="docs/images/icon-256.png" width="128" alt="nabra icon"></p>
 
 <h1 align="center">nabra</h1>
@@ -206,7 +202,7 @@ Nabra's code was written with Claude Code (Anthropic), working under the directi
 
 - The Nabra instrument, its design, the photographs, the diagrams and the quoted text are by **Peter Blasser**, from
   *Stores at the Mall* (Wesleyan University, 2015), and are used with credit for non-commercial purposes.
-- The logo is Blasser's hand-drawn **Sine** module diagram from the thesis. The app icon is the letter n in Septambres Neau.
+- The app icon is the letter n in Septambres Neau.
 - Built with [JUCE](https://juce.com). The code in this repository is licensed under the **GNU AGPL v3** ([LICENSE](LICENSE)),
   matching JUCE's open-source license.
 

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Universal binary")
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS")
 
-project(Nabra VERSION 1.1.0 LANGUAGES C CXX)
+project(Nabra VERSION 1.1.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -31,7 +31,7 @@ else()
 endif()
 
 juce_add_plugin(Nabra
-    VERSION 1.1.0
+    VERSION 1.1.1
     COMPANY_NAME "Tapestry"
     BUNDLE_ID "com.tapestry.nabra"
     PLUGIN_MANUFACTURER_CODE Tpst
@@ -54,8 +54,7 @@ file(GLOB NABRA_PHOTOS   "${CMAKE_CURRENT_SOURCE_DIR}/Resources/photos/*.jpg")
 file(GLOB NABRA_DIAGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/Resources/diagrams/*.png")
 file(GLOB NABRA_BOARDS   "${CMAKE_CURRENT_SOURCE_DIR}/Resources/boards/*.jpg")
 juce_add_binary_data(NabraArt HEADER_NAME NabraArt.h NAMESPACE NabraArt
-    SOURCES ${NABRA_PHOTOS} ${NABRA_DIAGRAMS} ${NABRA_BOARDS}
-        "${CMAKE_CURRENT_SOURCE_DIR}/Resources/logo/mark.png")
+    SOURCES ${NABRA_PHOTOS} ${NABRA_DIAGRAMS} ${NABRA_BOARDS})
 
 set(NABRA_SOURCES
     Source/Specs.cpp
