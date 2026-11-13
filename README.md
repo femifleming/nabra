@@ -207,3 +207,7 @@ Nabra's code was written with Claude Code (Anthropic), working under the directi
 - The logo is Blasser's hand-drawn **Sine** module diagram from the thesis. The app icon is a photograph of the Nabra rolled up.
 - Built with [JUCE](https://juce.com). The code in this repository is licensed under the **GNU AGPL v3** ([LICENSE](LICENSE)),
   matching JUCE's open-source license.
+
+## Request log
+
+Everything that was asked for while this was designed and built is in [REQUESTS.md](REQUESTS.md).
