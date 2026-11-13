@@ -6,7 +6,9 @@
   <img src="docs/images/logo.png" width="180" alt="Nabra logo: Peter Blasser's hand-drawn Sine module diagram from the thesis, above a black Dymo-tape label reading NABRA">
 </p>
 
-<h1 align="center">Nabra</h1>
+<p align="center"><img src="docs/images/icon-256.png" width="128" alt="nabra icon"></p>
+
+<h1 align="center">nabra</h1>
 
 <p align="center">
   <b>An analog brain: the knobless tapestry synthesizer, as a VST3 / AU / LV2 instrument and a desktop app.</b><br>
