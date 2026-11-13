@@ -33,3 +33,5 @@ Every request typed while this was being designed and built with Claude Code, in
 
 > give it a logo, something from the dissertation, make sure on the desktop app i can zoom in and patch around like the vst. and install and open the latest version on my computer
 
+
+1. "for every single app and vst on my github, just make the app logo icon extremely minimal, a letter from this font [Septambres Neau] in some color, on some color background, update all the app icons." (New app icons: one Septambres Neau glyph, one colour on one colour.)

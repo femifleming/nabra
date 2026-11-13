@@ -204,7 +204,7 @@ Nabra's code was written with Claude Code (Anthropic), working under the directi
 
 - The Nabra instrument, its design, the photographs, the diagrams and the quoted text are by **Peter Blasser**, from
   *Stores at the Mall* (Wesleyan University, 2015), and are used with credit for non-commercial purposes.
-- The logo is Blasser's hand-drawn **Sine** module diagram from the thesis. The app icon is a photograph of the Nabra rolled up.
+- The logo is Blasser's hand-drawn **Sine** module diagram from the thesis. The app icon is the letter n in Septambres Neau.
 - Built with [JUCE](https://juce.com). The code in this repository is licensed under the **GNU AGPL v3** ([LICENSE](LICENSE)),
   matching JUCE's open-source license.
 
