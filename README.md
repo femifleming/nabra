@@ -69,19 +69,20 @@ Every release has ready-made downloads on the **[Releases page](https://github.c
 ### Homebrew (macOS and Linux)
 
 ```sh
-brew tap femifleming/nabra
+brew tap femifleming/tap
+brew trust --tap femifleming/tap
 ```
 
 **macOS** installs the app into `/Applications` and the plug-ins into `~/Library/Audio/Plug-Ins`:
 
 ```sh
-brew install --cask nabra
+brew install --cask femifleming/tap/nabra
 ```
 
 **Linux** (Homebrew on Linux) installs the app, then links the plug-ins and a menu entry into your home folder:
 
 ```sh
-brew install femifleming/nabra/nabra
+brew install --formula femifleming/tap/nabra
 nabra-link-plugins        # ~/.vst3, ~/.lv2 and an applications-menu entry
 ```
 
@@ -94,8 +95,8 @@ and puts the VST3 in `C:\Program Files\Common Files\VST3`. There's also a portab
 [Scoop](https://scoop.sh):
 
 ```powershell
-scoop bucket add nabra https://github.com/femifleming/homebrew-nabra
-scoop install nabra
+scoop bucket add femifleming https://github.com/femifleming/homebrew-tap
+scoop install femifleming/nabra
 ```
 
 Homebrew doesn't run on Windows, which is why there's a Scoop bucket. The builds aren't code-signed yet, so Windows
